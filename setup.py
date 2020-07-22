@@ -31,7 +31,7 @@ setup(
         'Operation System :: POSIX :: Linux',
         'Operation System :: Unix',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.7',
     ],
 
     keywords='rs21 project',
