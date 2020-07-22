@@ -8,6 +8,9 @@ from aiohttp import web
 
 from rs21_test.lib.misc import json_dumps
 
+MIN_AGE = 0
+MAX_AGE = 130
+
 
 class BernallioHandler(web.View):
     """Bernallio handler"""
@@ -17,51 +20,80 @@ class BernallioHandler(web.View):
         ---
         summary: 'Get Bernallio Census data'
         tags:
-          - Bernallio
+          - Census
         parameters:
-          - name: lat
-            description: "Facebook geo location, latitude"
+          - name: agemin
+            description: "Age from"
             in: query
             required: false
-            example: 35.0480546
+            example: 18
             schema:
               type: number
-          - name: lon
-            description: "Facebook geo location, longitude"
+          - name: agemax
+            description: "Age before"
             in: query
             required: false
-            example: -106.7204881
+            example: 56
             schema:
               type: number
-          - name: dist
-            description: "Distance in meters from geo position"
+          - name: gender
+            description: "Gender"
             in: query
-            required: false
-            example: 100
             schema:
-              type: number
+              type: string
+              enum: ["any", "male", "female"]
         responses:
           '200':
             description: 'Return Bernallio Census data'
         """
 
-        lat = self.request.rel_url.query.get('lat', None)
-        lon = self.request.rel_url.query.get('lon', None)
-        dist = int(self.request.rel_url.query.get('dist', 100))
+        minage = int(self.request.rel_url.query.get('agemin', MIN_AGE))
+        maxage = int(self.request.rel_url.query.get('agemax', MAX_AGE))
+        gender = self.request.rel_url.query.get('gender', "any").lower()
 
-        filter_query = {}
+        result = {}
 
-        if all([lon, lat]):
-            filter_query.update({
-                'properties.location': {
-                    '$near': {
-                        '$geometry': {
-                           'type': "Point",
-                            'coordinates': [float(lon), float(lat)]},
-                        '$maxDistance': dist
-                    }
+        if all([minage, maxage, gender]):
+            re_gender = re.compile(r'^({})$'.format(gender if gender != 'any' else 'female|male'), re.IGNORECASE)
+            categories = await self.request.app._db.census_filters.find(
+                {
+                    'type': 'age',
+                    'min': {'$gte': minage},
+                    'max': {'$lte': maxage},
+                    'gender': re_gender
+                },
+                {
+                    '_id': 0,
                 }
-            })  # 100 meters
+            ).to_list(length=None)
+            result['categories'] = categories
 
-        result = await self.request.app._db.bernallio.find(filter_query, {'_id': 0}).to_list(length=None)
+            return_set = {
+                '_id': 0,
+                "GEOID": 1,
+            }
+            for category in result['categories']:
+                filter_field = category["meta_index"] + "_with_ann_" + category["category"]
+                return_set[filter_field] = 1
+
+            query = await self.request.app._db.cities.find({}, return_set).to_list(length=None)
+            result['filter'] = query
+        return web.json_response(result, dumps=json_dumps)
+
+
+class BernallioGeometriesHandler(web.View):
+    """Bernallio geometries handler"""
+
+    async def get(self) -> web.Response:
+        """
+        ---
+        summary: 'Get Bernallio geometries'
+        tags:
+          - Census
+        responses:
+          '200':
+            description: 'Return Bernallio geometries'
+        """
+
+        result = await self.request.app._db.geometries.find({}, {'_id': 0}).to_list(length=None)
         return web.json_response(result, dumps=json_dumps)

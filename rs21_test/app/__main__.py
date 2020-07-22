@@ -13,7 +13,7 @@ from aiohttp_swagger3 import SwaggerDocs, SwaggerUiSettings
 from rs21_test.lib.db import DatabaseConfig
 from rs21_test.app.handlers.facebook import FacebookHandler, FacebookTypePlacesHandler
 from rs21_test.app.handlers.twitter import TwitterHandler
-from rs21_test.app.handlers.bernallio import BernallioHandler
+from rs21_test.app.handlers.bernallio import BernallioHandler, BernallioGeometriesHandler
 
 
 def main():
@@ -38,7 +38,8 @@ def main():
         web.get('/api/v1/facebook', FacebookHandler),
         web.get('/api/v1/facebook_type_places', FacebookTypePlacesHandler),
         web.get('/api/v1/twitter', TwitterHandler),
-        web.get('/api/v1/bernallio', BernallioHandler)
+        web.get('/api/v1/bernallio', BernallioHandler),
+        web.get('/api/v1/geometries', BernallioGeometriesHandler),
     ]
 
     swagger = SwaggerDocs(

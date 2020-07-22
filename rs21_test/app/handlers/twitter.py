@@ -53,7 +53,11 @@ class TwitterHandler(web.View):
             schema:
               type: number
           - name: sentiment
-            description: "Tweet sentiment"
+            description: >
+              Tweet sentiment:
+                * `1` - positive
+                * `0` - neutral
+                * `-1` - negative
             in: query
             required: false
             schema:
@@ -84,8 +88,7 @@ class TwitterHandler(web.View):
             
         # filter by sentiment
         if sentiment:
-            q_str = re.compile(r'^{}$'.format(sentiment), re.I)
-            filter_query.update({'sentiment': q_str})
+            filter_query.update({'sentiment': int(sentiment)})
 
         # geo filter
         if all([lon, lat]):

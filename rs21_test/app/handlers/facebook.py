@@ -95,7 +95,7 @@ class FacebookTypePlacesHandler(web.View):
         ---
         summary: 'Get list of all types of Facebook places'
         tags:
-          - FacebookTypePlacesHandler
+          - Facebook
         responses:
           '200':
             description: 'Return list of all types of Facebook places'
