@@ -52,6 +52,12 @@ class TwitterHandler(web.View):
             example: 100
             schema:
               type: number
+          - name: sentiment
+            description: "Tweet sentiment"
+            in: query
+            required: false
+            schema:
+              type: string
         responses:
           '200':
             description: 'Return list of tweets'
@@ -61,6 +67,7 @@ class TwitterHandler(web.View):
         query = self.request.rel_url.query.get('query', None)
         lat = self.request.rel_url.query.get('lat', None)
         lon = self.request.rel_url.query.get('lon', None)
+        sentiment = self.request.rel_url.query.get('sentiment', None)
         dist = int(self.request.rel_url.query.get('dist', 100))
 
         filter_query = {}
@@ -74,6 +81,11 @@ class TwitterHandler(web.View):
         if query:
             q_str = re.compile(r'^.*?{}.*?$'.format(' '.join(query.split()).replace(' ', '\s+')), re.I)
             filter_query.update({'tweet': q_str})
+            
+        # filter by sentiment
+        if sentiment:
+            q_str = re.compile(r'^{}$'.format(sentiment), re.I)
+            filter_query.update({'sentiment': q_str})
 
         # geo filter
         if all([lon, lat]):

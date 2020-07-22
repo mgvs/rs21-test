@@ -36,12 +36,19 @@ class DataLoader:
         self._db.twitter.create_index([("twit", ASCENDING)])
         self._db.twitter.create_index([("time", ASCENDING)])
         self._db.twitter.create_index([("location", GEOSPHERE)])
+        self._db.twitter.create_index([("sentiment", ASCENDING)])
 
         twitter_data = []
         twitter_files = filter(lambda x: x.endswith('csv'), os.listdir(self.cfg['LOADER']['DATA']['TWITTER']))
         for file_name in map(lambda x: os.path.join(self.cfg['LOADER']['DATA']['TWITTER'], x), twitter_files):
             with open(file_name, 'r', encoding='latin-1') as fd:
                 twitter_data = list(filter(lambda x: len(x) == 5, [x.rsplit(',', 4) for x in fd.readlines()]))
+                
+        analyser = SentimentIntensityAnalyzer()
+        def sentim(x):
+            if x > 0: return 'positive'
+            if x < 0: return 'negative'
+            else: return 'neutral'
 
         new_objects = []
         for row in twitter_data:
@@ -49,7 +56,8 @@ class DataLoader:
                 'username': row[1],
                 'tweet': row[0],
                 'datetime': datetime.datetime.strptime(row[4].strip('\n').strip(';'), '%Y-%m-%d %H:%M:%S'),
-                'location': {"type": "Point", "coordinates": [float(row[3]), float(row[2])]}
+                'location': {"type": "Point", "coordinates": [float(row[3]), float(row[2])]},
+                'sentiment': sentim(analyser.polarity_scores(row[0])['compound'])
             })
         self._db.twitter.insert_many(new_objects)
 
