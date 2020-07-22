@@ -87,48 +87,20 @@ class FacebookHandler(web.View):
         return web.json_response(result, dumps=json_dumps)
 
 
-class FacebookAllPlacesHandler(web.View):
+class FacebookTypePlacesHandler(web.View):
     """Facebook All Places handler"""
 
     async def get(self) -> web.Response:
         """
         ---
-        summary: 'Get list of all Facebook places'
+        summary: 'Get list of all types of Facebook places'
         tags:
-          - FacebookAllPlaces
+          - FacebookTypePlacesHandler
         responses:
           '200':
-            description: 'Return list of all Facebook places'
+            description: 'Return list of all types of Facebook places'
         """
 
-        place = self.request.rel_url.query.get('query', None)
-        place_type = self.request.rel_url.query.get('type', None)
-        lat = self.request.rel_url.query.get('lat', None)
-        lon = self.request.rel_url.query.get('lon', None)
-        dist = int(self.request.rel_url.query.get('dist', 100))
-
-        filter_query = {}
-
-        if place:
-            q_str = re.compile(r'^.*?{}.*?$'.format(place.replace(' ', '\s+')), re.IGNORECASE)
-            filter_query.update({'place': q_str})
-
-        if place_type:
-            q_str = re.compile(r'^.*?{}.*?$'.format(place_type.replace(' ', '\s+')), re.IGNORECASE)
-            filter_query.update({'type': q_str})
-
-        if all([lon, lat]):
-            filter_query.update({
-                'location': {
-                    '$near': {
-                        '$geometry': {
-                           'type': "Point",
-                            'coordinates': [float(lon), float(lat)]},
-                        '$maxDistance': dist
-                    }
-                }
-            })  # 100 meters
-
-        result = await self.request.app._db.facebook.find({}, {'_id': 0}).to_list(length=None)
-        return web.json_response({"all_places": {i.get('place') for i in result}}, dumps=json_dumps)
+        result = await self.request.app._db.facebook.find({}, {'_id': 0, 'type': 1}).to_list(length=None)
+        return web.json_response({"all_types": {i.get('type') for i in result}}, dumps=json_dumps)
 
