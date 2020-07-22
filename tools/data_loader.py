@@ -12,6 +12,8 @@ import json
 import yaml
 from pymongo import ASCENDING, GEOSPHERE
 
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
 from rs21_test.lib.db import DatabaseConfig
 
 
