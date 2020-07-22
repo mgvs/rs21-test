@@ -43,6 +43,7 @@ setup(
         'aiohttp-swagger3  >= 0.4.4',
         'motor',
         'pyyaml',
+        'vaderSentiment'
     ],
 
     entry_points={
