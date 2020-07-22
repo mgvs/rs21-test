@@ -101,6 +101,9 @@ class FacebookTypePlacesHandler(web.View):
             description: 'Return list of all types of Facebook places'
         """
 
-        result = await self.request.app._db.facebook.find({}, {'_id': 0, 'type': 1}).to_list(length=None)
-        return web.json_response({"all_types": {i.get('type') for i in result}}, dumps=json_dumps)
+        all_types = list()
+        pipline = [{"$sort": {"type": 1}}, {"$group": {"_id": "$type"}}]
+        async for doc in self.request.app._db.facebook.aggregate(pipline):
+            all_types.append(doc.get('_id'))
+        return web.json_response({"all_types": all_types}, dumps=json_dumps)
 
