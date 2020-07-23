@@ -18,13 +18,13 @@ class FacebookHandler(web.View):
           - Facebook
         parameters:
           - name: query
-            description: "Name of place"
+            description: "Name of place (or multiple with comma separated)"
             in: query
             required: false
             schema:
               type: string
           - name: type
-            description: "Place type"
+            description: "Place type (or multiple with comma separated)"
             in: query
             required: false
             schema:
@@ -61,18 +61,28 @@ class FacebookHandler(web.View):
         lon = self.request.rel_url.query.get('lon', None)
         dist = int(self.request.rel_url.query.get('dist', 100))
 
-        filter_query = {}
+        filter_query = []
 
         if place:
-            q_str = re.compile(r'^.*?{}.*?$'.format(place.replace(' ', '\s+')), re.IGNORECASE)
-            filter_query.update({'place': q_str})
+            place_queries = []
+            for place_query in place.split(','):
+                q_str = re.compile(r'^.*?{}.*?$'.format(place_query.rstrip(' ').lstrip(' ').replace(r' ', r'\s+')), re.IGNORECASE)
+                place_queries.append({'place': q_str})
+            filter_query.append({
+                '$or': place_queries
+            })
 
         if place_type:
-            q_str = re.compile(r'^.*?{}.*?$'.format(place_type.replace(' ', '\s+')), re.IGNORECASE)
-            filter_query.update({'type': q_str})
+            place_queries = []
+            for place_type_query in place_type.split(','):
+                q_str = re.compile(r'^.*?{}.*?$'.format(place_type_query.rstrip(' ').lstrip(' ').replace(r' ', r'\s+')), re.IGNORECASE)
+                place_queries.append({'type': q_str})
+            filter_query.append({
+                '$or': place_queries
+            })
 
         if all([lon, lat]):
-            filter_query.update({
+            filter_query.append({
                 'location': {
                     '$near': {
                         '$geometry': {
@@ -83,7 +93,11 @@ class FacebookHandler(web.View):
                 }
             })  # 100 meters
 
-        result = await self.request.app._db.facebook.find(filter_query, {'_id': 0}).to_list(length=None)
+        query_filter = {}
+        if filter_query:
+            query_filter = {"$and": filter_query}
+
+        result = await self.request.app._db.facebook.find(query_filter, {'_id': 0}).to_list(length=None)
         return web.json_response(result, dumps=json_dumps)
 
 
