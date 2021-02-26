@@ -39,7 +39,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
     install_requires=[
-        'aiohttp           == 3.6.2',
+        'aiohttp           == 3.7.4',
         'aiohttp-swagger3  >= 0.4.4',
         'motor',
         'pyyaml',
